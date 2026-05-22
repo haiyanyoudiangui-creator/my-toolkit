@@ -4,33 +4,26 @@
 
 ## 做了什么
 
-虾小丘帮小辉辉完成日常的开发和测试运维任务：
+虾小丘帮小辉辉完成日常开发和测试运维：
 
-| 任务 | 做法 |
-|------|------|
-| **安装 Kaiboer Home** | curl 内网服务器获取最新 APK → adb install 到手机 |
-| **烧录固件** | 调用 `flash_device` 脚本刷 RK3568 设备 |
-| **远程抓包** | 通过 `wrt-capture` SSH 管道抓 OpenWRT 路由器流量 |
-| **翻 GitLab 代码** | Chrome CDP 方式登录 GitLab 浏览 kaiboer_dev 组仓库 |
-| **OTA 管理** | 为 user 版本设备开 ADB（OTA 服务器 + 特殊账号） |
+- **安装 Kaiboer Home**：curl 内网服务器获取 APK → adb install 到手机
+- **烧录固件**：调用 `flash_device` 脚本刷 RK3568
+- **远程抓包**：`wrt-capture` SSH 管道抓路由器流量
+- **翻 GitLab 代码**：Chrome CDP 方式登录浏览 kaiboer_dev 仓库
+- **OTA 管理**：为 user 版本设备开 ADB
+
+> [!IMPORTANT]
+> 所有运维操作封装成脚本，注册到 PATH。AI 只需知道**有哪些脚本**和**什么时候调用**，不需要记具体命令。
 
 ───
 
-## 核心思路
-
-### 脚本工具箱模式
-
-> 💡 把分散的运维操作封装成脚本，注册到 PATH。
+## 脚本工具箱模式
 
 ```
-~/skills/ → 各种功能脚本存放目录
+~/skills/ → 功能脚本存放
 ~/.local/bin/ → PATH 注册
 /usr/local/bin/ → 全局命令（wrt-capture, flash_device）
 ```
-
-虾小丘不需要记住具体命令，只需要知道**有哪些脚本**和**什么时候调用**。
-
-───
 
 ### Kaiboer Home 安装流程
 
@@ -38,36 +31,25 @@
 用户说「安装 Kaiboer Home」
   → curl 192.168.10.200:6688 获取版本列表
   → 列出可选版本 → 等用户选择
-  → curl 下载指定版本 APK
-  → adb install -r -d 到已连接手机
+  → curl 下载 APK
+  → adb install -r -d 到手机
 ```
-
-───
 
 ### GitLab 代码浏览
 
-> ⚠️ 内网 GitLab 不支持 basic auth，需要通过 Chrome CDP 方式登录。
+> [!WARNING]
+> 内网 GitLab 不支持 basic auth，需 Chrome CDP 登录。浏览代码确保**只读**。
 
-| 步骤 | 操作 |
-|------|------|
-| 1 | `open -a Google\ Chrome --args --remote-debugging-port=18800` |
-| 2 | CDP 操作自动填写账号密码 |
-| 3 | 通过 DOM 选择器定位项目列表 |
-| 4 | 浏览代码确保只读 |
+1. `open -a Google\ Chrome --args --remote-debugging-port=18800`
+2. CDP 自动填账号密码
+3. DOM 选择器定位项目列表
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## 🔄 复用指南
+## 复用指南
 
-### 脚本工具箱搭建方法
-
-| 步骤 | 操作 |
-|------|------|
-| 1 | `mkdir -p ~/skills/[功能名]/scripts/` 创建脚本目录 |
-| 2 | `ln -s ~/skills/[功能名]/scripts/[脚本].sh /usr/local/bin/[命令名]` 注册到 PATH |
-| 3 | 写进 MEMORY.md 让 AI 知道有哪些脚本和触发条件 |
-
-### 脚本通用模板
+> [!TIP]
+> **脚本工具箱 3 步搭建**：建目录 → symlink 到 `/usr/local/bin` → 写入 MEMORY.md 让 AI 知道。
 
 ```bash
 #!/bin/bash
@@ -78,24 +60,21 @@
 TARGET="[目标地址/设备]"
 
 # ---- 依赖检查 ----
-# 检查必需的命令是否存在
+# 检查必需命令是否存在
 
-# ---- 交互获取参数 ----
-# read/select 获取用户输入
+# ---- 交互参数 ----
+# read/select 获取输入
 
-# ---- 执行操作 ----
+# ---- 执行 ----
 # 核心逻辑
 
-# ---- 结果反馈 ----
+# ---- 反馈 ----
 # 成功/失败的清晰输出
 ```
 
 ### CI/CD 型操作模式
 
-> 💡 **拉取版本列表 → 用户选择 → 下载 → 安装 → 验证**，这个模式可迁移到任何部署场景。
+**拉取列表 → 用户选择 → 下载 → 安装 → 验证**，这个模式可迁移到任何部署场景：
 
-| 原操作 | 新场景可替换为 |
-|--------|-------------|
-| APK | IPA / EXE / DMG |
-| `adb install` | `brew cask install` / `dpkg -i` |
-| `adb` 验证 | 新平台的验证命令 |
+- APK → IPA/EXE/DMG
+- `adb install` → `brew cask install`/`dpkg -i`
