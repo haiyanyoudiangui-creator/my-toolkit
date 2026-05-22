@@ -79,3 +79,55 @@ Allure 测试报告工具，把运行结果渲染成可交互的 HTML 报告。
 pytest --alluredir=./allure-results
 allure serve ./allure-results
 ```
+
+---
+
+## 复用指南
+
+### 1. YAML 驱动用例选择模式
+
+**核心思想**：不直接跑文件名，用人类可读的 ID 映射到具体用例。
+
+**新项目照搬步骤**：
+1. 创建 `automation.yaml`，定义 `automations`（用例名→nodeid 映射）和 `runs`/`plans`（用例分组）
+2. 在 conftest 的 `pytest_collection_modifyitems` 里读取 YAML，按计划过滤和排运用例
+3. 用户就只用 `pytest --case=smoke` 而不是 `pytest tests/test_xxx.py::TestXX::test_yy`
+
+**需要改的地方**：YAML 里的 nodeid 路径、marker 名、分组逻辑
+
+**不需要动的地方**：conftest 的过滤框架、CLI 解析逻辑
+
+### 2. conftest hooks 模板
+
+**核心思想**：pre（拦截用例收集）+ post（汇总失败）= 零侵入自动化流水线。
+
+**可复用 hooks**：
+- `pytest_collection_modifyitems` → 按计划筛选/排运例
+- `pytest_runtest_makereport` → 记录失败状态和附件路径
+- `pytest_terminal_summary` → 打印格式化的失败汇总
+
+**新项目迁移**：直接拷贝 conftest 的 hook 骨架，替换 YAML 路径和 marker 映射表即可。
+
+### 3. Fixture 生命周期管理
+
+**核心思想**：session 级放全局配置，function 级放资源对象（设备、连接等）。
+
+**通用模式**：
+```yaml
+# config 文件里放：
+device: { serial, ip, timeout }
+wifi: { ssid, password }
+apps: [{ name, url, package }]
+```
+
+**新项目**只需改 YAML，不改 fixture 代码。fixture 始终是「读取 YAML → 连接 → yield 对象 → 清理」这个模式。
+
+### 4. Allure 报告组织
+
+**核心思想**：feature=大模块，story=子场景，step=操作步骤，attach=关键证据。
+
+**复用规则**：
+- feature 用产品的功能模块名（开机引导、WiFi、播放器…）
+- story 用具体的测试场景描述
+- step 包裹每一个对外部有影响的操作
+- attach 只放关键诊断文本/XML/截图，不放无关日志

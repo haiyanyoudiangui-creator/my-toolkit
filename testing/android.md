@@ -72,3 +72,60 @@ Android Debug Bridge，与安卓设备通信的命令行工具。
 
 - 当 uiautomator2 的点击操作返回成功但实际未生效时，用 `adb input tap` 代替
 - 当需要直操作屏幕坐标而 uiautomator2 无法定位到对应元素时，手动传入坐标点击
+
+---
+
+## 复用指南
+
+### 1. 开机引导跳过通用流程
+
+**核心思想**：不是对特定页面写死点击逻辑，而是构建一个「等待→检查→点击→兜底」的状态机。
+
+**通用流程**：
+1. 检测当前是否在引导页面（通过特定文本或 package 判断）
+2. 找到可点击的「跳过/下一步/同意/完成」按钮
+3. 点击后等待新页面出现，超时则重试
+4. 如果 UI 操作失败，回退到 `adb shell input tap x y`
+5. 引导循环直到进入桌面（package = launcher）
+
+**新项目迁移**：换 3 个东西搞定 — 目标 package 名、各页面按钮文本、adb input 坐标。
+
+### 2. 应用启动验证模式
+
+**核心思想**：不依赖知道 activity 名，用 monkey 冷启动 + 包名监听判断成功。
+
+**通用代码模式**：
+```python
+# 启动
+device.shell(["monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1"])
+# 验证
+time.sleep(等待时间)
+current = device.app_current()
+assert package_name == current['package']
+# 退出
+device.shell(["am", "force-stop", package_name])
+```
+
+**新项目**只需换 package_name 和等待时间。
+
+### 3. UI 全量遍历 DFS 模式
+
+**核心思想**：dump 当前页面 XML → 找到所有可点击元素 → 逐个点击 → 回退 → 换下一个。
+
+**通用框架**：
+1. `dump_hierarchy()` 获取当前页面 XML
+2. 解析所有 `clickable=true` 的节点
+3. 给每个页面生成签名（节点文本+class哈希），去重
+4. 深度优先：点一个元素 → 递归探索新页面 → 回退 → 点下一个
+5. 输出结构化索引：页面签名、路径、元素列表
+
+**新项目**只需换目标 package 名和模块定义（哪些页面属于哪个模块）。
+
+### 4. ADB 兜底设计哲学
+
+**核心思想**：uiautomator2 是主方案，adb 是备选。每一步操作都应有 fallback。
+
+**永远生效的兜底**：
+- `(x, y).click()` 失败 → `adb shell input tap x y`
+- 找元素失败 → `dump_hierarchy()` 打印所有可见文本，辅助定位
+- 连不上设备 → USB 自动切 IP 重试

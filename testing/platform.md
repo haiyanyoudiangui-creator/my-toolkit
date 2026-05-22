@@ -48,3 +48,72 @@
 - 用 Python 原生 zipfile + xml.etree 解析（不依赖 openpyxl 等第三方库）
 - 自动识别表头、提取步骤文本、按模块分组导入 sqlite
 - 平台刷新后用例库即可更新，无需手动录入
+
+---
+
+## 复用指南
+
+### 1. FastAPI + sqlite3 轻量用例管理平台
+
+**核心思想**：不是搞一个重型测试管理系统，而是几百行代码搭一个够用的本地方案。
+
+**通用模板五件套**：
+1. FastAPI 定义 REST 接口（/cases, /executions, /plans）
+2. sqlite3 存用例、执行记录、绑定关系
+3. Jinja2/原生 HTML 模板渲染页面
+4. uvicorn 一键启动
+5. conftest hooks 把 pytest 结果自动写入平台
+
+**新项目迁移**：换数据库表结构（字段名/表数量），API 路由和页面模板参考原代码。
+
+### 2. YAML 配置分离模式
+
+**核心思想**：运行时配置（设备/WiFi/APP）和测试计划（用例列表/分组）分开两份 YAML。
+
+**device.yaml 模板**：
+```yaml
+device: { serial, ip, adb_timeout }
+wifi: { ssid, password, timeout }
+apps: [{ name, url, package, launch_seconds }]
+ui_dump: { target_package, max_depth, module_definitions }
+audio: { scan_roots, sample_count }
+```
+
+**automation.yaml 模板**：
+```yaml
+automations:
+  first_boot:
+    nodeid: "tests/test_skip_guide.py::TestSkipGuide::test_skip_guide"
+    name: "恢复出厂后跳过开机引导并连接WiFi"
+runs:
+  smoke: { cases: [first_boot, launcher_home] }
+plans:
+  full: { runs: [smoke, network, audio] }
+```
+
+**新项目**只需改 YAML 值，不用改解析代码。
+
+### 3. Excel 零依赖解析导入
+
+**核心思想**：XLSX 本质是 ZIP 包，用原生 zipfile + xml.etree 即可解析，不需要 openpyxl。
+
+**通用流程**：
+1. `zipfile.ZipFile()` 打开 xlsx
+2. 读取 `xl/sharedStrings.xml` 获取所有文本单元格内容
+3. 遍历 `xl/worksheets/sheet*.xml` 逐表解析行数据
+4. 通过 sharedStrings 索引把数字 ID 还原为实际文本
+5. 按表头和模块分类写入 sqlite
+
+**新项目**只需换 Excel 文件名和工作表名，解析逻辑完全复用。
+
+### 4. pytest 集成模式
+
+**核心思想**：测试平台不依赖手动录入结果，pytest 跑完自动入库。
+
+**集成方法**：
+- conftest 的 `pytest_sessionstart` 创建执行记录
+- `pytest_runtest_makereport` 把每个用例结果写入 sqlite
+- `pytest_sessionfinish` 更新执行状态为完成
+- 平台读取 sqlite 即可展示最新结果
+
+**新项目**：拷贝 conftest 的 hook 代码，替换 sqlite 表和字段名。

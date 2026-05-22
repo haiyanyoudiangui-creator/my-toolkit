@@ -10,4 +10,13 @@
 
 ## 🦞 OpenClaw 训练手册
 
-> 待补充
+- [总览](./openclaw/README.md)
+- [身份设定](./openclaw/identity.md)
+- [行为规范](./openclaw/behaviors.md)
+- [日志分析客服](./openclaw/log-analysis.md)
+- [飞书文档管理](./openclaw/feishu-docs.md)
+- [设备诊断](./openclaw/device-diagnosis.md)
+- [日常运维](./openclaw/daily-ops.md)
+- [Android 测试](./openclaw/android-testing.md)
+- [知识检索](./openclaw/knowledge.md)
+- [记忆系统](./openclaw/memory-system.md)

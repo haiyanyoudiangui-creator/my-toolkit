@@ -71,3 +71,75 @@
 **实际用法**：
 - 与 ffmpeg 配合，快速查看音频/视频文件的详细编码信息
 - 用来验证设备输出文件的编码参数是否正确
+
+---
+
+## 复用指南
+
+### 1. SSH 管道远程抓包通用模式
+
+**核心思想**：不在设备端存文件，通过 SSH 把 tcpdump 的 pcap 流直接传到 Mac 本地。
+
+**通用公式**：
+```bash
+ssh user@remote_host "tcpdump -i interface -s 0 -U -w - filter" > local.pcap
+```
+
+**参数说明**：
+- `-i interface`：抓哪个网口（any 抓全部）
+- `-s 0`：完整包不截断
+- `-U`：实时写入（不缓冲）
+- `-w -`：输出到 stdout
+- `filter`：BPF 过滤表达式（`host 192.168.x.x` 只抓特定IP，`not port 22 and not port 53` 排除 SSH 和 DNS）
+
+**新场景迁移**：只需改 3 个参数：
+1. 远程设备地址（SSH user@host）— 不一定要 OpenWRT，任何有 tcpdump 的设备都行
+2. 网口名（any / eth0 / wlan0…）
+3. 过滤规则（IP、端口黑名单）
+
+**脚本模板**：`wrt-capture.sh` 可直接照搬，改开头 HOST= 变量和 INTERFACES 数组即可。
+
+### 2. ripgrep + jq 日志分析流水线
+
+**核心思想**：rg 快速定位 → jq 结构化处理 → 管道组合。
+
+**搜索日志通用模式**：
+```bash
+# 搜索错误并统计出现次数
+rg -c "ERROR|FATAL" allure-results/
+# 搜索特定设备的所有日志条目
+rg "D0:87:5C" logcat.txt | rg "onError|tombstone|SIGSEGV"
+# 递归搜索 JSON 文件的特定字段
+rg '"status":\s*"failed"' --type json
+```
+
+**JSON 处理通用模式**：
+```bash
+# 提取特定字段
+jq '.testCases[] | {name: .name, status: .status}' results.json
+# 过滤和统计
+jq '[.[] | select(.status == "failed")] | length' results.json
+# 拍平嵌套
+jq '.cases[] | .name + " | " + .module' cases.json
+```
+
+**新项目**换 grep 关键词和 JSON 字段名即可。
+
+### 3. ffmpeg + mediainfo 媒体文件校验
+
+**通用校验流程**：
+1. 获取源文件的参数作为基准：`mediainfo --Output=JSON source.mp3`
+2. 分别检查编码格式、采样率、声道数、码率
+3. 校验设备输出文件与源文件的参数是否一致（或是否符合预期转换）
+
+**常用命令**：
+```bash
+# 查看编码详情
+ffprobe -v quiet -print_format json -show_streams output.wav
+# 提取关键参数
+ffprobe -v error -show_entries stream=codec_name,sample_rate,channels,bit_rate -of default=noprint_wrappers=1 output.wav
+# 快速查看元数据
+mediainfo output.mp4
+```
+
+**新项目**只需换文件名和预期参数值。
