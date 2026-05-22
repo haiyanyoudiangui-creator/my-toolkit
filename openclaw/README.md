@@ -31,11 +31,9 @@
 |------|------|---------|
 | 身份设定 | [identity.md](./identity.md) | 名字/性格/三件套模板 |
 | 行为规范 | [behaviors.md](./behaviors.md) | 6条规则/客服视角/优先级 |
-| 日志分析 | [log-analysis.md](./log-analysis.md) | SSH→8步分析→云盘归档 |
+| 日志分析 | [log-analysis.md](./log-analysis.md) | SSH→8步分析→交叉验证→归档 |
 | 文档管理 | [feishu-docs.md](./feishu-docs.md) | FAQ/索引/开发汇总 |
-| 设备诊断 | [device-diagnosis.md](./device-diagnosis.md) | MAC→日志→交叉验证 |
 | 日常运维 | [daily-ops.md](./daily-ops.md) | 装APK/烧固件/抓包 |
-| Android测试 | [android-testing.md](./android-testing.md) | pytest+uiautomator2+Midscene |
 | 知识检索 | [knowledge.md](./knowledge.md) | 向量库/飞书索引/知识库 |
 | 记忆系统 | [memory-system.md](./memory-system.md) | 每日日志/长期记忆/向量 |
 

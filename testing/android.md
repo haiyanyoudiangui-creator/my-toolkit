@@ -117,3 +117,16 @@ device.shell(["am", "force-stop", pkg])
 
 > [!TIP]
 > 每条 uiautomator2 操作旁放一个 adb 备选。连接层也应有 fallback（USB → IP）。这个设计哲学通用。
+
+───
+
+## 在 OpenClaw 中的集成
+
+虾小丘（飞书文件助手）通过 OpenClaw 调度 Android 测试，分三层：
+
+- **即时操作**：android_control 技能 — 在飞书发「截屏」「点击XX」→ 直接 adb 操作
+- **视觉自动化**：Midscene 技能 — AI 看图识别元素，不需要知道元素 ID，适合混合应用和系统级 UI
+- **完整框架**：pytest + uiautomator2 — 在 `~/Desktop/kaiboer-test-framework/` 跑全量回归，Allure 出报告
+
+> [!NOTE]
+> Midscene 优点是不需要写代码、自然语言操作；缺点是速度慢，复杂动态页面识别率不如手动定位。适用条件：设备开启 ADB 调试 + 手机安装 Midscene 辅助服务。
