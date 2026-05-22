@@ -26,7 +26,7 @@
 ### Kaiboer Home 安装流程
 
 > 用户说「安装 Kaiboer Home」
-> → curl 192.168.10.200:6688 获取版本列表
+> → curl [内网服务器] 获取版本列表
 > → 列出可选版本 → 等用户选择
 > → curl 下载 APK
 > → adb install -r -d 到手机

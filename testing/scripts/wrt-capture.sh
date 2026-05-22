@@ -4,7 +4,7 @@
 # 用法: ./wrt-capture.sh
 # ============================================================
 # ---- 配置 ----
-WRT_HOST="root@192.168.6.1"
+WRT_HOST="root@[路由器IP]"
 OUTPUT_DIR="$HOME/Desktop/wrt-captures/$(date +%Y-%m-%d)"
 mkdir -p "$OUTPUT_DIR"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
