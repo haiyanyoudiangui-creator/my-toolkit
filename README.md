@@ -6,6 +6,7 @@
 
 - [总览](./testing/README.md)
 - [pytest + allure](./testing/framework.md)
+- [pytest 实战复盘：Android 真机自动化流水线](./testing/pytest-practice.md)
 - [uiautomator2 + ADB](./testing/android.md)
 
 ## 🦞 OpenClaw 训练手册
