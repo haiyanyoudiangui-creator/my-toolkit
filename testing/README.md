@@ -6,6 +6,10 @@
 
 - [pytest + allure](./framework.md)
 
+## 实战分享
+
+- [pytest 实战复盘：把测试框架做成 Android 真机自动化流水线](./pytest-practice.md)
+
 ## Android 自动化
 
 - [uiautomator2 + ADB](./android.md)
