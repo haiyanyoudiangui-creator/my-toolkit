@@ -4,7 +4,9 @@
 
 ## 🧪 测试工具
 
-> 待补充
+- [总览](./testing/README.md)
+- [pytest + allure](./testing/framework.md)
+- [uiautomator2 + ADB](./testing/android.md)
 
 ## 🦞 OpenClaw 训练手册
 
