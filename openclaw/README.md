@@ -11,7 +11,7 @@
 
 ## 架构
 
-```
+```text
 飞书用户 ──→ 飞书通道 ──→ Gateway (WS) ──→ Agent (DeepSeek) ──→ 技能/工具
                                            ├── 知识库 (knowledge-base/)
                                            ├── 飞书索引 (feishu-index/)

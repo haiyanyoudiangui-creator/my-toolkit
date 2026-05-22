@@ -19,21 +19,17 @@
 
 ## 脚本工具箱模式
 
-```
-~/skills/ → 功能脚本存放
-~/.local/bin/ → PATH 注册
-/usr/local/bin/ → 全局命令（wrt-capture, flash_device）
-```
+- `~/skills/` — 功能脚本存放
+- `~/.local/bin/` — PATH 注册
+- `/usr/local/bin/` — 全局命令（wrt-capture, flash_device）
 
 ### Kaiboer Home 安装流程
 
-```
-用户说「安装 Kaiboer Home」
-  → curl 192.168.10.200:6688 获取版本列表
-  → 列出可选版本 → 等用户选择
-  → curl 下载 APK
-  → adb install -r -d 到手机
-```
+> 用户说「安装 Kaiboer Home」
+> → curl 192.168.10.200:6688 获取版本列表
+> → 列出可选版本 → 等用户选择
+> → curl 下载 APK
+> → adb install -r -d 到手机
 
 ### GitLab 代码浏览
 

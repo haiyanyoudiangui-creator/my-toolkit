@@ -43,7 +43,7 @@
 > [!TIP]
 > 三层记忆模型适用于任何需要长期记忆的 AI 助手。
 
-```
+```text
 memory/YYYY-MM-DD.md (天)
      ↓ 提炼
 MEMORY.md (永久)
@@ -53,7 +53,7 @@ MEMORY.md (永久)
 
 ### 文件结构
 
-```
+```text
 workspace/
 ├── MEMORY.md              # 长期记忆
 ├── memory/
