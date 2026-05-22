@@ -1,63 +1,87 @@
 # 知识检索
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ## 做了什么
 
 虾小丘有三套知识检索体系：
 
 | 体系 | 用途 | 数据规模 |
 |------|------|---------|
-| **知识库文件** | workspace/knowledge-base/ 下 5 个 markdown 文件，记录架构/Bug/FAQ/变更/总结 | 长期积累 |
-| **飞书索引** | feishu-index/ 下本地索引，避免频繁调飞书 API | 全量飞书文档 |
-| **向量数据库** | Ollama + ChromaDB，195 个文档块，语义搜索历史记忆 | 所有 memory + 知识库 |
+| **知识库文件** | workspace/knowledge-base/ 下 markdown 文件（架构/Bug/FAQ/变更/总结） | 积累中 |
+| **飞书索引** | 本地索引避免频繁调飞书 API | 全量飞书文档 |
+| **向量数据库** | Ollama + ChromaDB 语义搜索 | 195 个文档块 |
+
+───
 
 ## 核心思路
 
 ### 检索优先级
 
+> 💡 从快到慢、从本地到远程。
+
 ```
 用户提问
-  → 1. 查向量库（语义搜索） → 相似度 > 0.75 直接引用
-  → 2. 读知识库文件 → 精准匹配
-  → 3. 查飞书本地索引 → 找文档 ID
-  → 4. 调飞书 API → 全局搜索
+  → 1️⃣ 查向量库（语义搜索） → 相似度 > 0.75 直接引用
+  → 2️⃣ 读知识库文件 → 精准匹配
+  → 3️⃣ 查飞书本地索引 → 找文档 ID
+  → 4️⃣ 调飞书 API → 全局搜索兜底
 ```
 
-从快到慢、从本地到远程。
+───
 
-### 向量数据库搭建
+### 向量数据库架构
 
-- **Ollama**：本地 embedding 服务，运行 `nomic-embed-text` 模型（274MB），将文本转为 768 维向量
-- **ChromaDB**：向量存储，持久化到本地文件
-- **索引脚本**：`migrate.py` 读取 workspace 下的 markdown 文件 → 按 ## 标题分块 → 向量化 → 存入 ChromaDB → 已存在的块不重复添加
-- **查询脚本**：`query.py "关键词"` → 返回 Top 5 相似块
+| 组件 | 版本 | 说明 |
+|------|------|------|
+| **Ollama** | 0.24.0 | 本地 embedding 服务，`ollama serve` 后台运行 |
+| **nomic-embed-text** | 274MB | 将文本转为 768 维向量 |
+| **ChromaDB** | 1.5.9 | 向量存储，持久化到本地文件 |
 
-### 飞书索引系统
+### 索引脚本
 
-本地维护三份索引：
-- **INDEX.md**：全量文件，每条含标题、ID、类型、标签、更新时间、一句话摘要
-- **by-tag.md**：按标签分组，快速按主题查找
-- **by-wiki.md**：按知识库分组
+| 文件 | 用途 | 命令 |
+|------|------|------|
+| `migrate.py` | 读取 workspace/*.md → 按 ## 分块 → 向量化 → 存入 ChromaDB | `python3 migrate.py` |
+| `query.py` | 语义搜索，返回 Top 5 | `python3 query.py "关键词"` |
 
-每天凌晨自动增量更新（通过 cron 任务）。
+### 使用时机
 
-## 复用指南
+| 场景 | 操作 |
+|------|------|
+| 会话开始 | `curl -s http://127.0.0.1:11434` 确认 Ollama 存活，否则 `ollama serve &` |
+| 写了新 memory 后 | `migrate.py` 增量更新（已存在的不会重复添加） |
+| 用户问「还记得之前...」 | `query.py "关键词"` 语义搜索 |
+| 心跳维护（2-3天一次） | `migrate.py` 同步索引 |
+
+───
+
+### 飞书索引结构
+
+| 文件 | 内容 |
+|------|------|
+| **INDEX.md** | 全量文件，每条含标题、ID、类型、标签、更新时间、一句话摘要 |
+| **by-tag.md** | 按标签分组，快速按主题查找 |
+| **by-wiki.md** | 按知识库分组 |
+| **metadata.json** | 最后扫描时间、统计信息 |
+
+每天凌晨通过 cron 任务自动增量更新。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## 🔄 复用指南
 
 ### 向量数据库搭建步骤
 
-**3 步搭建**：
+| 步骤 | 命令 |
+|------|------|
+| 1 | `brew install ollama` |
+| 2 | `ollama pull nomic-embed-text` |
+| 3 | `pip install chromadb` |
+| 4 | 部署 migrate.py + query.py |
 
-1. **安装 Ollama**：`brew install ollama` → `ollama pull nomic-embed-text`
-2. **安装 ChromaDB**：`pip install chromadb`
-3. **部署脚本**：
-```bash
-# 创建向量库目录
-mkdir -p ~/.openclaw/vector_db/
-# 放两个脚本：migrate.py（索引更新）和 query.py（查询）
-```
-
-**脚本模板**：
+**migrate.py 核心逻辑**：
 ```python
-# migrate.py 的核心逻辑
 import chromadb
 from ollama import embed
 
@@ -71,7 +95,7 @@ for md_file in workspace.glob("**/*.md"):
             collection.add(ids=[chunk.hash], embeddings=[embedding], documents=[chunk.text])
 ```
 
-**query.py 的核心逻辑**：
+**query.py 核心逻辑**：
 ```python
 embedding = ollama.embed(model="nomic-embed-text", input=query)
 results = collection.query(query_embeddings=[embedding], n_results=5)
@@ -80,11 +104,12 @@ for doc, score in zip(results["documents"][0], results["distances"][0]):
         print(f"[{score:.3f}] {doc[:200]}...")
 ```
 
-### 检索优先级策略通用
+### 检索优先级策略
 
-这个「向量库 → 知识库文件 → 本地索引 → API」的四层检索漏斗适用于任何需要文档检索的 AI 助手场景。
+> 💡「向量库 → 知识库文件 → 本地索引 → API」四层漏斗适用于任何文档检索场景。
 
-**迁移步骤**：
-1. 先扔现有的文档/FAQ 到向量库建立基础索引
-2. 高频文档单独建本地索引（减少向量库查询）
-3. API 作为最后兜底
+| 步骤 | 做什么 |
+|------|------|
+| 1 | 先扔现有文档/FAQ 到向量库建立基础索引 |
+| 2 | 高频文档单独建本地索引（减少向量库查询） |
+| 3 | API 作为最后兜底 |
